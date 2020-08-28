@@ -1,0 +1,129 @@
+#! gmake
+
+#
+# Copyright (C) 2006 Laurent Bessard
+# 
+# This file is part of canfestival, a library implementing the canopen
+# stack
+# 
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License, or (at your option) any later version.
+# 
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+# 
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+# 
+
+CC = arm-linux-gnueabihf-gcc
+CXX = arm-linux-gnueabihf-g++
+LD = arm-linux-gnueabihf-g++
+OPT_CFLAGS = -O2
+CFLAGS = $(OPT_CFLAGS)
+PROG_CFLAGS =  -DDEBUG_WAR_CONSOLE_ON -DDEBUG_ERR_CONSOLE_ON -DDEBUG_MSG_CONSOLE_ON -g
+EXE_CFLAGS =  -lpthread -lrt -ldl
+OS_NAME = unix
+ARCH_NAME = arm
+PREFIX = 
+TARGET = unix
+CAN_DRIVER = can_socket
+TIMERS_DRIVER = timers_unix
+MAIN_APP = "main"
+CANFESTIVALFILE = CanFestival
+APPLICATIONFILE = application
+
+INCLUDES_MAIN_01 = ../../$(CANFESTIVALFILE)/include
+INCLUDES_MAIN_02 = ../../$(CANFESTIVALFILE)/include/$(TARGET)
+INCLUDES_MAIN_03 = ../../$(CANFESTIVALFILE)/include/$(TIMERS_DRIVER)
+INCLUDES_MAIN_04 = ../../$(CANFESTIVALFILE)/src
+INCLUDES_MAIN_05 = ../../$(APPLICATIONFILE)/include
+INCLUDES_MAIN_06 = ../../$(CANFESTIVALFILE)/src/mkf
+INCLUDES_MAIN_07 = ../../WriteLog
+INCLUDES_MAIN_08 = 
+INCLUDES_MAIN_09 = 
+
+RELY_MAIN_01 = ../../$(CANFESTIVALFILE)/src/mkf/TestMaster.o
+RELY_MAIN_02 = ../../$(CANFESTIVALFILE)/src/mkf/canopen_app.o
+RELY_MAIN_03 = ../../$(APPLICATIONFILE)/mkf/libapplication.a
+RELY_MAIN_04 = ../../$(CANFESTIVALFILE)/driver/$(TARGET)/mkf/libcanfestival_$(TARGET).a
+RELY_MAIN_05 = ../../$(CANFESTIVALFILE)/lib/mkf/libcanfestival.a
+RELY_MAIN_06 = ./main.o
+RELY_MAIN_07 = ./WriteLog.o
+RELY_MAIN_08 = 
+
+
+#INCLUDES = -I../../include -I../../include/$(TARGET) -I../../include/$(CAN_DRIVER) -I../../include/$(TIMERS_DRIVER)
+INCLUDES = -I$(INCLUDES_MAIN_01) -I$(INCLUDES_MAIN_02) -I$(INCLUDES_MAIN_03) -I$(INCLUDES_MAIN_04) -I$(INCLUDES_MAIN_05)\
+		-I$(INCLUDES_MAIN_06) -I$(INCLUDES_MAIN_07)
+
+#OBJS = $(MASTER_OBJS) ../../src/libcanfestival.a ../../drivers/$(TARGET)/libcanfestival_$(TARGET).a
+OBJS =  $(RELY_MAIN_06) $(RELY_MAIN_07) $(RELY_MAIN_01) $(RELY_MAIN_02) $(RELY_MAIN_03) $(RELY_MAIN_04) $(RELY_MAIN_05)
+ifeq ($(TARGET),win32)
+	MAIN_APP = "main.exe"
+endif
+
+ifeq ($(TIMERS_DRIVER),timers_win32)
+	EXE_CFLAGS =
+endif
+
+vpath %.c ../:../../WriteLog
+
+all: $(MAIN_APP)
+
+	@echo " "
+	@echo "*********************************************"
+	@echo "**Building [libapplication.a]"
+	@echo "*********************************************"
+../../application/mkf/libapplication.a:
+	$(MAKE) -C ../../application/mkf
+	@echo " "
+	@echo "*********************************************"
+	@echo "**Building [TestMaster.a]"
+	@echo "*********************************************"
+../../CanFestival/src/mkf/TestMaster.o:
+	$(MAKE) -C ../../CanFestival/src/mkf
+	@echo " "
+	@echo "*********************************************"
+	@echo "**Building [canopen_app.a]"
+	@echo "*********************************************"
+../../CanFestival/src/mkf/canopen_app.o:
+	$(MAKE) -C ../../CanFestival/src/mkf
+	@echo " "
+	@echo "*********************************************"
+	@echo "**Building [libcanfestival_$(TARGET).a]"
+	@echo "*********************************************"
+../../$(CANFESTIVALFILE)/driver/$(TARGET)/mkf/libcanfestival_$(TARGET).a:
+	$(MAKE) -C ../../$(CANFESTIVALFILE)/driver/$(TARGET)/mkf
+
+$(MAIN_APP): $(OBJS)
+	$(MAKE) -C ../../application/mkf
+	$(MAKE) -C ../../CanFestival/src/mkf
+	$(MAKE) -C ../../CanFestival/src/mkf
+	$(MAKE) -C ../../$(CANFESTIVALFILE)/driver/$(TARGET)/mkf
+	$(LD) $(CFLAGS) $(PROG_CFLAGS) ${PROGDEFINES} $(INCLUDES) -o $@ $(OBJS) $(EXE_CFLAGS)
+
+
+%.o: %.c
+	$(CC) $(CFLAGS) $(PROG_CFLAGS) ${PROGDEFINES} $(INCLUDES) -o $@ -c $<
+
+clean:
+	rm -f $(OBJS)
+	rm -f $(MAIN_APP)
+
+test:
+#../../$(CANFESTIVALFILE)/driver/$(TARGET)/mkf/libcanfestival_$(TARGET).a:
+#	$(MAKE) -C ../../$(CANFESTIVALFILE)/driver/$(TARGET)/mkf
+
+install: canopen_app
+	cp $< ../obj
+	
+uninstall:
+	rm -f $(DESTDIR)$(PREFIX)/bin/canopen_app
+
+

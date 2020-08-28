@@ -1,0 +1,3 @@
+#!/bin/bash
+./CanFestival/configure --cc=arm-linux-guneabihf-gcc --arch=arm --os=unix --kerneldir=/home/jjj/linux/IMX6UL/linux/alientek_linux --prefix=$PWD/myinstall --target=unix --can=socket --timers=unix --debug=WAR,MSG
+
